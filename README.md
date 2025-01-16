@@ -1,4 +1,4 @@
-# Sample ResNet-10 implementation in JS-PyTorch for SONAR Web
+# Sample ResNet-10 implementation in tensorflow.js for SONAR Web
 
 ### Setup:
 
@@ -11,6 +11,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 python get_data.py
 
-```
+npm install
+npm start
 
-And then run the javascript client by running `index.html`.
+```
