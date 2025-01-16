@@ -1,0 +1,86 @@
+# Project-specific
+public/data
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.egg-info/
+*.egg
+*.log
+*.sqlite3
+*.db
+
+# Virtual environments
+env/
+venv/
+ENV/
+VENV/
+.env
+.venv
+.Python
+
+# Python packaging
+build/
+dist/
+*.egg-info/
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# Pytest
+.cache/
+.coverage
+htmlcov/
+nosetests.xml
+coverage.xml
+
+# MyPy
+.mypy_cache/
+
+# Django/Flask
+*.sqlite3
+db.sqlite3
+instance/
+settings_local.py
+config.py
+
+# Node (if npm/yarn used for frontend)
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# JavaScript/Frontend
+dist/
+build/
+*.log
+
+# OS/System files
+.DS_Store
+Thumbs.db
+
+# IDEs/Editors
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Environment Variables
+.env
+.env.*
+
+# Coverage reports
+coverage/
+*.cover
+.hypothesis/
+
+# Temporary files
+*.bak
+*.tmp
+*.swp
+
