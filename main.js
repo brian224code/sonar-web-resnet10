@@ -3,23 +3,51 @@ import { ResNet10, testModel } from './models.js'
 
 
 // dataset loading helper
+async function loadDataset(jsonFile) {
+	try {
+		const response = await fetch(jsonFile)
+		const jsonData = await response.json()
+		return processData(jsonData)
+	} catch (error) {
+		console.error('Error loading data:', error)
+	}
+}
 
-// function loadDataset() {
-//
-// }
+// data processing helper
+function processData(jsonData) {
+	const images = jsonData.map(item => item.image)
+	const labels = jsonData.map(item => item.label)
+
+	return {
+		images: images,
+		labels: labels
+	}
+}
 
 // initial page loading
 document.addEventListener('DOMContentLoaded', () => {
-	// dataSet = loadDataset();
-
 	const trainButton = document.getElementById('train-btn')
 	const output = document.getElementById('output')
 
-	trainButton.addEventListener('click', () => {
+	trainButton.addEventListener('click', async () => {
+		output.textContent = 'Loading dataset...'
+
+		const dataSet = await loadDataset("/data/bloodmnist_test.json")
+
+		let shape = dataSet.images[0].length
+		console.log("Data loaded. Sample shape: ", shape)
+
 		output.textContent = 'Starting training...'
 
 		// create the model
-		const model = new testModel()
+		const model = new ResNet10()
 		model.summary()
+
+		// create dummy input
+		let ans = model.forward(dataSet.images[0])
+
+		console.log('Output: ', ans)
+
+		output.textContent = 'check log, demo done'
 	})
 })
