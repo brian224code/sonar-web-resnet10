@@ -1,5 +1,5 @@
-import { ResNet10, testModel } from './models.js'
-// import { trainModel } from './train.js'
+import { addLog, getTrainingConfig } from './util.js'
+import { ResNet10 } from './models.js'
 
 
 // dataset loading helper
@@ -24,28 +24,44 @@ function processData(jsonData) {
 	}
 }
 
+// globals
+let model = null
+let dataSet = null
+
+const loadDataBtn = document.getElementById('loadData')
+const startTrainingBtn = document.getElementById('startTraining')
+
 // initial page loading
 document.addEventListener('DOMContentLoaded', () => {
-	const trainButton = document.getElementById('train-btn')
-	const output = document.getElementById('output')
+	addLog('Page loaded.')
+})
 
-	trainButton.addEventListener('click', async () => {
-		output.textContent = 'Loading dataset...'
+// handle dataloading
+loadDataBtn.addEventListener('click', async () => {
+	addLog('Loading data...')
+	dataSet = await loadDataset('/data/bloodmnist_test.json')
+	addLog('Data loaded.')
 
-		const dataSet = await loadDataset("/data/bloodmnist_test.json")
+	startTrainingBtn.disabled = false
+})
 
-		let shape = dataSet.images[0].length
-		console.log("Data loaded. Sample shape: ", shape)
+startTrainingBtn.addEventListener('click', async () => {
+	// create model
+	model = new ResNet10()
+	// process config from html
+	let trainingConfig = getTrainingConfig()
 
-		output.textContent = 'Starting training...'
+	try {
+		startTrainingBtn.disabled = true
+		loadDataBtn.disabled = true
 
-		// create the model
-		const model = new ResNet10()
-		model.summary()
+		await model.train(dataSet, trainingConfig)
+	} catch (error) {
+		addLog(`Error during training:`, error)
+	}
 
-		model.train(dataSet)
+	startTrainingBtn.disabled = false
+	loadDataBtn.disabled = false
 
-
-		output.textContent = 'check log, demo done'
-	})
+	addLog("Done.")
 })

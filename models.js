@@ -1,3 +1,4 @@
+import { addLog } from './util.js'
 import * as tf from '@tensorflow/tfjs'
 
 class Model {
@@ -11,36 +12,8 @@ class Model {
 	forward(x, shape) {
 		const tensor = (x instanceof tf.Tensor) ? x : tf.tensor2d([x], shape)
 		const output = this.model.predict(tensor)
-		console.log('Output:', output.arraySync())
+		addLog('Output:', output.arraySync())
 		return output
-	}
-}
-
-// test model
-export class testModel extends Model {
-	constructor() {
-		super()
-		console.log("Initializing test model instance...")
-		this.model = this.buildModel()
-	}
-
-	buildModel() {
-		// make a sequential model
-		this.model = tf.sequential();
-
-		// add the feed forward test layer
-		this.model.add(tf.layers.dense({
-			units: 2,
-			inputShape: [2],
-			activation: 'linear'
-		}))
-
-		this.model.compile({
-			optimizer: 'adam',
-			loss: 'meanSquaredError'
-		})
-
-		return this.model
 	}
 }
 
@@ -48,7 +21,7 @@ export class testModel extends Model {
 export class ResNet10 extends Model {
 	constructor() {
 		super()
-		console.log("Initializing ResNet10 instance...")
+		addLog("Initializing ResNet10 instance...")
 		this.model = this.buildModel()
 	}
 
@@ -109,6 +82,7 @@ export class ResNet10 extends Model {
 			metrics: ['accuracy']
 		})
 
+		addLog('model initialized.')
 		return model
 	}
 
@@ -161,21 +135,21 @@ export class ResNet10 extends Model {
 			callbacks: {
 				// callback in between epochs
 				onEpochEnd: (epoch, logs) => {
-					console.log(`Epoch ${epoch + 1}`)
-					console.log(`Loss: ${logs.loss.toFixed(4)}`)
-					console.log(`Accuracy: ${(logs.acc * 100).toFixed(2)}%`)
+					addLog(`Epoch ${epoch + 1}`)
+					addLog(`Loss: ${logs.loss.toFixed(4)}`)
+					addLog(`Accuracy: ${(logs.acc * 100).toFixed(2)}%`)
 					if (logs.val_loss) {
-						console.log(`  Validation Loss: ${logs.val_loss.toFixed(4)}`)
-						console.log(`  Validation Accuracy: ${(logs.val_acc * 100).toFixed(2)}%`)
+						addLog(`  Validation Loss: ${logs.val_loss.toFixed(4)}`)
+						addLog(`  Validation Accuracy: ${(logs.val_acc * 100).toFixed(2)}%`)
 					}
 				}
 			}
 		}
 
 		try {
-			console.log(`Beginning training...`)
+			addLog(`Beginning training...`)
 			const history = await this.model.fit(images, labels, trainingConfig)
-			console.log(`Training completed`)
+			addLog(`Training completed`)
 
 			images.dispose()
 			labels.dispose()
