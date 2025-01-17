@@ -43,10 +43,8 @@ document.addEventListener('DOMContentLoaded', () => {
 		const model = new ResNet10()
 		model.summary()
 
-		// create dummy input
-		let ans = model.forward(dataSet.images[0])
+		model.train(dataSet)
 
-		console.log('Output: ', ans)
 
 		output.textContent = 'check log, demo done'
 	})

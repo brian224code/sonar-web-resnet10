@@ -1,10 +1,10 @@
 import * as tf from '@tensorflow/tfjs'
 
 class Model {
-	constructor () {
+	constructor() {
 	}
-	
-	summary () {
+
+	summary() {
 		this.model.summary()
 	}
 
@@ -18,13 +18,13 @@ class Model {
 
 // test model
 export class testModel extends Model {
-	constructor () {
+	constructor() {
 		super()
 		console.log("Initializing test model instance...")
 		this.model = this.buildModel()
 	}
 
-	buildModel () {
+	buildModel() {
 		// make a sequential model
 		this.model = tf.sequential();
 
@@ -46,13 +46,13 @@ export class testModel extends Model {
 
 // resnet
 export class ResNet10 extends Model {
-	constructor () {
+	constructor() {
 		super()
 		console.log("Initializing ResNet10 instance...")
 		this.model = this.buildModel()
 	}
 
-	buildModel () {
+	buildModel() {
 		const model = tf.sequential()
 
 		// convert from flattened to tensor
@@ -104,7 +104,7 @@ export class ResNet10 extends Model {
 
 		// compile model
 		model.compile({
-			optimizer: 'adam', 
+			optimizer: 'adam',
 			loss: 'categoricalCrossentropy',
 			metrics: ['accuracy']
 		})
@@ -132,10 +132,61 @@ export class ResNet10 extends Model {
 
 		tf.layers.add().apply([input, conv2])
 
-		model.add(tf.layers.activation({activation: 'relu'}))
+		model.add(tf.layers.activation({ activation: 'relu' }))
 	}
 
 	forward(x) {
 		return super.forward(x, [1, 2352])
+	}
+
+	async train(dataSet, config = {
+		epochs: 2,
+		batchSize: 16,
+		validationSplit: 0.2,
+		shuffle: true,
+		verbose: 1
+	}) {
+		// take raw array of values and turn to tensor
+		const images = tf.tensor2d(dataSet.images, [dataSet.images.length, 2352])
+
+		const labels = tf.oneHot(tf.tensor1d(dataSet.labels, 'int32'), 8)
+
+		// create config object
+		const trainingConfig = {
+			epochs: config.epochs,
+			batchSize: config.batchSize,
+			validationSplit: config.validationSplit,
+			shuffle: config.shuffle,
+			verbose: config.verbose,
+			callbacks: {
+				// callback in between epochs
+				onEpochEnd: (epoch, logs) => {
+					console.log(`Epoch ${epoch + 1}`)
+					console.log(`Loss: ${logs.loss.toFixed(4)}`)
+					console.log(`Accuracy: ${(logs.acc * 100).toFixed(2)}%`)
+					if (logs.val_loss) {
+						console.log(`  Validation Loss: ${logs.val_loss.toFixed(4)}`)
+						console.log(`  Validation Accuracy: ${(logs.val_acc * 100).toFixed(2)}%`)
+					}
+				}
+			}
+		}
+
+		try {
+			console.log(`Beginning training...`)
+			const history = await this.model.fit(images, labels, trainingConfig)
+			console.log(`Training completed`)
+
+			images.dispose()
+			labels.dispose()
+
+			return history
+		} catch (error) {
+			console.error('Error during training: ', error)
+
+			images.dispose()
+			labels.dispose()
+			throw error
+		}
 	}
 }
