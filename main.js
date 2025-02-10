@@ -98,7 +98,7 @@ dumpWeightsBtn.addEventListener('click', async () => {
 	const url = URL.createObjectURL(blob)
 	const a = document.createElement('a')
 	a.href = url
-	a.downoad = 'model_weights.json'
+	a.download = 'model_weights.json' // fixed a.downoad to a.download
 	document.body.appendChild(a)
 	a.click()
 	document.body.removeChild(a)
