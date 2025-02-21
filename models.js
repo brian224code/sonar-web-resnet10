@@ -23,14 +23,12 @@ export class ResNet10 extends Model {
 		super()
 		addLog("Initializing ResNet10 instance...")
 		this.model = this.buildModel()
-		this.model.summary()
 	}
 
 	// Build the model
 	buildModel() {
 		const inputs = tf.input({ shape: [2352] });
 
-		// Reshape input to [28, 28, 3]
 		let x = tf.layers.reshape({ targetShape: [28, 28, 3] }).apply(inputs);
 
 		// Initial Conv Layer
@@ -47,9 +45,9 @@ export class ResNet10 extends Model {
 
 		// Residual Blocks
 		x = this.residualBlock(x, 64);
-		x = this.residualBlock(x, 128, true);  // Downsampling
-		x = this.residualBlock(x, 256, true);  // Downsampling
-		x = this.residualBlock(x, 512, true);  // Downsampling
+		x = this.residualBlock(x, 128, true);
+		x = this.residualBlock(x, 256, true);
+		x = this.residualBlock(x, 512, true);
 
 		// Global Average Pooling
 		x = tf.layers.globalAveragePooling2d({ dataFormat: 'channelsLast' }).apply(x);
@@ -57,10 +55,8 @@ export class ResNet10 extends Model {
 		// Fully Connected Layer
 		x = tf.layers.dense({ units: 8, activation: 'softmax' }).apply(x);
 
-		// Create the model
 		const model = tf.model({ inputs, outputs: x });
 
-		// compile model
 		model.compile({
 			optimizer: 'adam',
 			loss: 'categoricalCrossentropy',
