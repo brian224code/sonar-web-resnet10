@@ -23,57 +23,42 @@ export class ResNet10 extends Model {
 		super()
 		addLog("Initializing ResNet10 instance...")
 		this.model = this.buildModel()
+		this.model.summary()
 	}
 
+	// Build the model
 	buildModel() {
-		const model = tf.sequential()
+		const inputs = tf.input({ shape: [2352] });
 
-		// convert from flattened to tensor
-		model.add(tf.layers.reshape({
-			targetShape: [28, 28, 3], // data shape for bloodMNIST
-			inputShape: [2352]
-		}))
+		// Reshape input to [28, 28, 3]
+		let x = tf.layers.reshape({ targetShape: [28, 28, 3] }).apply(inputs);
 
-		// first conv2d layer
-		model.add(tf.layers.conv2d({
-			filters: 32,
+		// Initial Conv Layer
+		x = tf.layers.conv2d({
+			filters: 64,
 			kernelSize: 3,
 			strides: 1,
 			padding: 'same',
-			activation: 'relu'
-		}))
+			useBias: false
+		}).apply(x);
 
-		// residual blocks, 1
-		this.addResidualBlock(model, 32)
-		this.addResidualBlock(model, 32)
+		x = tf.layers.batchNormalization().apply(x);
+		x = tf.layers.reLU().apply(x);
 
-		// second set of blocks plus downsampling layer
-		model.add(tf.layers.conv2d({
-			filters: 64,
-			kernelSize: 3,
-			strides: 2,
-			padding: 'same'
-		}))
-		this.addResidualBlock(model, 64)
-		this.addResidualBlock(model, 64)
+		// Residual Blocks
+		x = this.residualBlock(x, 64);
+		x = this.residualBlock(x, 128, true);  // Downsampling
+		x = this.residualBlock(x, 256, true);  // Downsampling
+		x = this.residualBlock(x, 512, true);  // Downsampling
 
-		// third set of blocks with another downsampling layer
-		model.add(tf.layers.conv2d({
-			filters: 128,
-			kernelSize: 3,
-			strides: 2,
-			padding: 'same'
-		}))
-		this.addResidualBlock(model, 128)
+		// Global Average Pooling
+		x = tf.layers.globalAveragePooling2d({ dataFormat: 'channelsLast' }).apply(x);
 
-		// pooling and softmax
-		model.add(tf.layers.globalAveragePooling2d({
-			dataFormat: 'channelsLast'
-		}))
-		model.add(tf.layers.dense({
-			units: 8,
-			activation: 'softmax'
-		}))
+		// Fully Connected Layer
+		x = tf.layers.dense({ units: 8, activation: 'softmax' }).apply(x);
+
+		// Create the model
+		const model = tf.model({ inputs, outputs: x });
 
 		// compile model
 		model.compile({
@@ -83,31 +68,137 @@ export class ResNet10 extends Model {
 		})
 
 		addLog('model initialized.')
-		return model
+
+		return model;
 	}
 
-	// helper for the residual blocks
-	addResidualBlock(model, filters) {
-		const input = model.layers[model.layers.length - 1].output
+	// Function to create a residual block
+	residualBlock(x, filters, downsample = false) {
+		let shortcut = x;
 
-		// first convolution
-		const conv1 = tf.layers.conv2d({
+		if (downsample) {
+			shortcut = tf.layers.conv2d({
+				filters: filters,
+				kernelSize: 1,
+				strides: 2,
+				padding: 'same',
+				useBias: false
+			}).apply(shortcut);
+			
+			shortcut = tf.layers.batchNormalization().apply(shortcut);
+		}
+
+		let out = tf.layers.conv2d({
 			filters: filters,
 			kernelSize: 3,
+			strides: downsample ? 2 : 1,
 			padding: 'same',
-			activation: 'relu'
-		}).apply(input)
+			useBias: false
+		}).apply(x);
+		
+		out = tf.layers.batchNormalization().apply(out);
+		out = tf.layers.reLU().apply(out);
 
-		const conv2 = tf.layers.conv2d({
+		out = tf.layers.conv2d({
 			filters: filters,
 			kernelSize: 3,
-			padding: 'same'
-		}).apply(conv1)
+			strides: 1,
+			padding: 'same',
+			useBias: false
+		}).apply(out);
+		
+		out = tf.layers.batchNormalization().apply(out);
+		
+		// Add the shortcut connection
+		out = tf.layers.add().apply([out, shortcut]);
+		out = tf.layers.reLU().apply(out);
 
-		tf.layers.add().apply([input, conv2])
-
-		model.add(tf.layers.activation({ activation: 'relu' }))
+		return out;
 	}
+	
+	// buildModel() {
+	// 	const model = tf.sequential()
+
+	// 	// convert from flattened to tensor
+	// 	model.add(tf.layers.reshape({
+	// 		targetShape: [28, 28, 3], // data shape for bloodMNIST
+	// 		inputShape: [2352]
+	// 	}))
+
+	// 	// first conv2d layer
+	// 	model.add(tf.layers.conv2d({
+	// 		filters: 32,
+	// 		kernelSize: 3,
+	// 		strides: 1,
+	// 		padding: 'same',
+	// 		activation: 'relu'
+	// 	}))
+
+	// 	// residual blocks, 1
+	// 	this.addResidualBlock(model, 32)
+	// 	this.addResidualBlock(model, 32)
+
+	// 	// second set of blocks plus downsampling layer
+	// 	model.add(tf.layers.conv2d({
+	// 		filters: 64,
+	// 		kernelSize: 3,
+	// 		strides: 2,
+	// 		padding: 'same'
+	// 	}))
+	// 	this.addResidualBlock(model, 64)
+	// 	this.addResidualBlock(model, 64)
+
+	// 	// third set of blocks with another downsampling layer
+	// 	model.add(tf.layers.conv2d({
+	// 		filters: 128,
+	// 		kernelSize: 3,
+	// 		strides: 2,
+	// 		padding: 'same'
+	// 	}))
+	// 	this.addResidualBlock(model, 128)
+
+	// 	// pooling and softmax
+	// 	model.add(tf.layers.globalAveragePooling2d({
+	// 		dataFormat: 'channelsLast'
+	// 	}))
+	// 	model.add(tf.layers.dense({
+	// 		units: 8,
+	// 		activation: 'softmax'
+	// 	}))
+
+	// 	// compile model
+	// 	model.compile({
+	// 		optimizer: 'adam',
+	// 		loss: 'categoricalCrossentropy',
+	// 		metrics: ['accuracy']
+	// 	})
+
+	// 	addLog('model initialized.')
+	// 	return model
+	// }
+
+	// // helper for the residual blocks
+	// addResidualBlock(model, filters) {
+	// 	const input = model.layers[model.layers.length - 1].output
+
+	// 	// first convolution
+	// 	const conv1 = tf.layers.conv2d({
+	// 		filters: filters,
+	// 		kernelSize: 3,
+	// 		padding: 'same',
+	// 		activation: 'relu'
+	// 	}).apply(input)
+
+	// 	const conv2 = tf.layers.conv2d({
+	// 		filters: filters,
+	// 		kernelSize: 3,
+	// 		padding: 'same'
+	// 	}).apply(conv1)
+
+	// 	tf.layers.add().apply([input, conv2])
+
+	// 	model.add(tf.layers.activation({ activation: 'relu' }))
+	// }
 
 	forward(x) {
 		return super.forward(x, [1, 2352])
